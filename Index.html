@@ -1,0 +1,1784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GTC Electric Bus Implementation Plan — Showcase</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --gold: #D4A017;
+    --gold-light: #F5E6B0;
+    --gold-dark: #8B6800;
+    --green: #1A6B45;
+    --green-light: #E4F2EB;
+    --red: #B8321A;
+    --red-light: #FAECEC;
+    --blue: #185FA5;
+    --blue-light: #E6F1FB;
+    --amber: #BA7517;
+    --amber-light: #FAEEDA;
+    --gray: #5F5E5A;
+    --gray-light: #F1EFE8;
+    --bg: #FAFAF8;
+    --white: #FFFFFF;
+    --text: #1C1B19;
+    --text-secondary: #5F5E5A;
+    --border: rgba(0,0,0,0.1);
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  /* HERO */
+  .hero {
+    background: #0D2B1A;
+    color: #fff;
+    padding: 64px 48px 56px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 300px; height: 300px;
+    border-radius: 50%;
+    background: rgba(212,160,23,0.12);
+  }
+  .hero-label {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-weight: 600;
+    margin-bottom: 16px;
+  }
+  .hero h1 {
+    font-family: 'Fraunces', serif;
+    font-size: 42px;
+    font-weight: 700;
+    line-height: 1.15;
+    margin-bottom: 20px;
+    max-width: 640px;
+  }
+  .hero h1 em {
+    font-style: normal;
+    color: var(--gold);
+  }
+  .hero-sub {
+    font-size: 16px;
+    color: rgba(255,255,255,0.65);
+    max-width: 560px;
+    margin-bottom: 40px;
+    line-height: 1.7;
+  }
+  .hero-stats {
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+  }
+  .hero-stat {
+    border-left: 2px solid var(--gold);
+    padding-left: 14px;
+  }
+  .hero-stat .num {
+    font-family: 'Fraunces', serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.1;
+  }
+  .hero-stat .lbl {
+    font-size: 12px;
+    color: rgba(255,255,255,0.5);
+    margin-top: 2px;
+  }
+
+  /* NAV */
+  .section-nav {
+    background: var(--white);
+    border-bottom: 0.5px solid var(--border);
+    padding: 0 48px;
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .section-nav a {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-decoration: none;
+    padding: 14px 18px;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .section-nav a:hover { color: var(--text); border-bottom-color: var(--gold); }
+
+  /* CONTENT */
+  .content { max-width: 1100px; margin: 0 auto; padding: 0 48px 80px; }
+
+  .section { padding: 56px 0 32px; border-bottom: 0.5px solid var(--border); }
+  .section:last-child { border-bottom: none; }
+
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .section-num {
+    font-family: 'Fraunces', serif;
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--gold);
+    line-height: 1;
+    min-width: 40px;
+  }
+  .section-title {
+    font-family: 'Fraunces', serif;
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  /* CARDS */
+  .card {
+    background: var(--white);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+  }
+
+  .card-grid {
+    display: grid;
+    gap: 16px;
+  }
+  .card-grid-2 { grid-template-columns: repeat(2, 1fr); }
+  .card-grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .card-grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+  .metric-card {
+    background: var(--gray-light);
+    border-radius: var(--radius-sm);
+    padding: 16px 20px;
+  }
+  .metric-card .m-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+    font-weight: 500;
+  }
+  .metric-card .m-val {
+    font-family: 'Fraunces', serif;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.1;
+  }
+  .metric-card .m-sub {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+  }
+
+  /* BADGES */
+  .badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    padding: 3px 9px;
+    border-radius: 20px;
+  }
+  .badge-red { background: var(--red-light); color: var(--red); }
+  .badge-amber { background: var(--amber-light); color: var(--amber); }
+  .badge-green { background: var(--green-light); color: var(--green); }
+  .badge-blue { background: var(--blue-light); color: var(--blue); }
+  .badge-gold { background: var(--gold-light); color: var(--gold-dark); }
+
+  /* ROUTE CARDS */
+  .route-card {
+    border-radius: var(--radius);
+    padding: 24px;
+    border: 0.5px solid var(--border);
+    background: var(--white);
+  }
+  .route-card .route-color {
+    width: 48px; height: 6px;
+    border-radius: 3px;
+    margin-bottom: 16px;
+  }
+  .route-card h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: var(--text);
+  }
+  .route-card .route-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin-bottom: 16px;
+  }
+  .route-stat { display: flex; justify-content: space-between; margin-bottom: 6px; }
+  .route-stat .rs-label { font-size: 12px; color: var(--text-secondary); }
+  .route-stat .rs-val { font-size: 12px; font-weight: 600; color: var(--text); }
+
+  /* TIMELINE */
+  .timeline { position: relative; padding-left: 32px; }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 7px; top: 8px; bottom: 0;
+    width: 2px;
+    background: var(--border);
+  }
+  .timeline-item {
+    position: relative;
+    margin-bottom: 28px;
+  }
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -28px; top: 6px;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--white);
+    border: 2px solid var(--gold);
+  }
+  .timeline-item.critical::before { background: var(--red); border-color: var(--red); }
+  .timeline-item.active::before { background: var(--green); border-color: var(--green); }
+
+  .tl-phase {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+  }
+  .tl-items {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .tl-item-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--text);
+  }
+  .tl-owner {
+    font-size: 11px;
+    color: var(--text-secondary);
+    background: var(--gray-light);
+    border-radius: 4px;
+    padding: 1px 6px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* RISK MATRIX */
+  .risk-row {
+    display: grid;
+    grid-template-columns: 2fr 100px 100px 100px;
+    gap: 8px;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 0.5px solid var(--border);
+    font-size: 13px;
+  }
+  .risk-row:last-child { border-bottom: none; }
+  .risk-row.header { font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.06em; padding-bottom: 8px; }
+
+  /* CHARGING TABLE */
+  .charge-row {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr 0.8fr 1.5fr;
+    gap: 12px;
+    align-items: start;
+    padding: 12px 0;
+    border-bottom: 0.5px solid var(--border);
+    font-size: 13px;
+  }
+  .charge-row:last-child { border-bottom: none; }
+  .charge-row.header { font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.06em; }
+
+  /* KPI TABLE */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: 1.4fr 0.8fr 1.5fr;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 0.5px solid var(--border);
+    font-size: 13px;
+    align-items: start;
+  }
+  .kpi-row:last-child { border-bottom: none; }
+  .kpi-row.header { font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.06em; }
+
+  /* STAFFING */
+  .staff-role {
+    display: grid;
+    grid-template-columns: 1.5fr 0.5fr 2fr;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 0.5px solid var(--border);
+    font-size: 13px;
+    align-items: start;
+  }
+  .staff-role:last-child { border-bottom: none; }
+  .staff-role.header { font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.06em; }
+
+  /* PRINCIPLES */
+  .principle {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    padding: 16px 0;
+    border-bottom: 0.5px solid var(--border);
+  }
+  .principle:last-child { border-bottom: none; }
+  .principle-num {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--gold);
+    min-width: 28px;
+    line-height: 1;
+    margin-top: 2px;
+  }
+  .principle-text {
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text);
+  }
+  .principle-text strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  /* LEGAL */
+  .legal-item {
+    display: grid;
+    grid-template-columns: 2fr 0.8fr 1fr;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 0.5px solid var(--border);
+    font-size: 13px;
+    align-items: start;
+  }
+  .legal-item.header { font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.06em; }
+  .legal-item:last-child { border-bottom: none; }
+
+  /* PAYMENT */
+  .payment-phase {
+    border-left: 3px solid var(--gold);
+    padding: 12px 16px;
+    background: var(--gold-light);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    margin-bottom: 12px;
+  }
+  .payment-phase h4 { font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--gold-dark); }
+  .payment-phase p { font-size: 13px; color: var(--text); line-height: 1.6; }
+
+  /* FINANCING */
+  .finance-item {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 0.8fr;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 0.5px solid var(--border);
+    font-size: 13px;
+    align-items: start;
+  }
+  .finance-item.header { font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.06em; }
+  .finance-item:last-child { border-bottom: none; }
+
+  /* CALLOUT */
+  .callout {
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-top: 20px;
+  }
+  .callout-warning { background: var(--amber-light); border-left: 4px solid var(--amber); }
+  .callout-critical { background: var(--red-light); border-left: 4px solid var(--red); }
+  .callout-success { background: var(--green-light); border-left: 4px solid var(--green); }
+  .callout h4 { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+  .callout p { font-size: 13px; line-height: 1.6; }
+
+  /* ACTION LIST */
+  .action-week { margin-bottom: 24px; }
+  .action-week h4 {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 0.5px solid var(--border);
+  }
+  .action-item {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 7px 0;
+    font-size: 13px;
+    color: var(--text);
+    border-bottom: 0.5px solid rgba(0,0,0,0.04);
+  }
+  .action-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--gold);
+    margin-top: 6px;
+    flex-shrink: 0;
+  }
+
+  /* RACI */
+  .raci-row {
+    display: grid;
+    grid-template-columns: 1.8fr 1fr 1fr 1fr;
+    gap: 8px;
+    padding: 9px 0;
+    border-bottom: 0.5px solid var(--border);
+    font-size: 12px;
+    align-items: start;
+  }
+  .raci-row.header { font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
+  .raci-row:last-child { border-bottom: none; }
+
+  /* NBA TRANSITION */
+  .nba-phase {
+    border-radius: var(--radius);
+    padding: 20px;
+    background: var(--white);
+    border: 0.5px solid var(--border);
+    margin-bottom: 12px;
+  }
+  .nba-phase h4 { font-size: 13px; font-weight: 600; margin-bottom: 10px; }
+  .nba-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; }
+  .nba-col { font-size: 12px; }
+  .nba-col .ncol-title { font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary); margin-bottom: 4px; }
+
+  /* BUDGET */
+  .budget-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 0.7fr;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 0.5px solid var(--border);
+    font-size: 13px;
+    align-items: center;
+  }
+  .budget-row.header { font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
+  .budget-row.total-row { font-weight: 600; font-size: 14px; border-top: 1.5px solid var(--text); border-bottom: none; margin-top: 4px; }
+  .budget-row:last-child { border-bottom: none; }
+
+  .phase2-trigger {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 10px 0;
+    border-bottom: 0.5px solid var(--border);
+    font-size: 13px;
+  }
+  .phase2-trigger:last-child { border-bottom: none; }
+  .phase2-trigger .checkmark { color: var(--green); font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+
+  @media (max-width: 768px) {
+    .hero { padding: 40px 24px; }
+    .hero h1 { font-size: 30px; }
+    .content { padding: 0 24px 60px; }
+    .section-nav { padding: 0 24px; }
+    .card-grid-2, .card-grid-3, .card-grid-4 { grid-template-columns: 1fr; }
+    .charge-row, .risk-row, .legal-item, .finance-item, .budget-row { grid-template-columns: 1fr; }
+    .nba-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-label">Grenada Transport Commission · Version 2.0 · April 2026</div>
+  <h1>Electric Bus Fleet<br><em>Implementation Plan</em></h1>
+  <p class="hero-sub">A micro-level blueprint for transforming Grenada's paratransit system into a modern, scheduled, electrified public transport network — covering the full journey from bus arrival through first 18 months of operations.</p>
+  <div class="hero-stats">
+    <div class="hero-stat"><div class="num">35–45</div><div class="lbl">Electric buses (Phase 1)</div></div>
+    <div class="hero-stat"><div class="num">3</div><div class="lbl">Priority corridors</div></div>
+    <div class="hero-stat"><div class="num">18 mo.</div><div class="lbl">Phase 1 timeline</div></div>
+    <div class="hero-stat"><div class="num">EC$40K</div><div class="lbl">Projected daily revenue</div></div>
+    <div class="hero-stat"><div class="num">100–120</div><div class="lbl">Phase 1 staff</div></div>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav class="section-nav">
+  <a href="#context">Context</a>
+  <a href="#routes">Routes</a>
+  <a href="#charging">Charging</a>
+  <a href="#schedule">Schedule</a>
+  <a href="#hr">HR & Drivers</a>
+  <a href="#payment">Payment</a>
+  <a href="#legal">Legal</a>
+  <a href="#nba">NBA Transition</a>
+  <a href="#tech">Technology</a>
+  <a href="#financing">Financing</a>
+  <a href="#risks">Risks</a>
+  <a href="#kpis">KPIs</a>
+  <a href="#budget">Budget</a>
+  <a href="#governance">Governance</a>
+  <a href="#phase2">Phase 2</a>
+  <a href="#actions">First 30 Days</a>
+</nav>
+
+<div class="content">
+
+  <!-- 1. STRATEGIC CONTEXT -->
+  <div class="section" id="context">
+    <div class="section-header">
+      <div class="section-num">01</div>
+      <div class="section-title">Strategic context & core principles</div>
+    </div>
+
+    <div class="card-grid card-grid-4" style="margin-bottom: 28px;">
+      <div class="metric-card">
+        <div class="m-label">Registered bus permits</div>
+        <div class="m-val">1,227</div>
+        <div class="m-sub">Across 43 routes, 9 zones</div>
+      </div>
+      <div class="metric-card">
+        <div class="m-label">Registered vehicles</div>
+        <div class="m-val">60,000+</div>
+        <div class="m-sub">For population of ~100,000</div>
+      </div>
+      <div class="metric-card">
+        <div class="m-label">Current model</div>
+        <div class="m-val">Fill-and-go</div>
+        <div class="m-sub">No schedules, no fixed stops</div>
+      </div>
+      <div class="metric-card">
+        <div class="m-label">Programme mandate</div>
+        <div class="m-val">NDC-aligned</div>
+        <div class="m-sub">Paris Agreement commitments</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <p style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary); margin-bottom: 16px;">Six non-negotiable strategic principles</p>
+      <div class="principle">
+        <div class="principle-num">1</div>
+        <div class="principle-text"><strong>Concentrate, don't spread.</strong> Deploy 40 buses on 3 routes and deliver an excellent service. A mediocre service on 11 routes fails — an outstanding service on 3 builds the brand and the case for expansion.</div>
+      </div>
+      <div class="principle">
+        <div class="principle-num">2</div>
+        <div class="principle-text"><strong>Coexistence, not displacement.</strong> GTC electric buses take new and express routes. NBA retains existing permits in Year 1. Managed transition begins in Year 2 with incentive-led retirement.</div>
+      </div>
+      <div class="principle">
+        <div class="principle-num">3</div>
+        <div class="principle-text"><strong>Charging infrastructure first.</strong> It MUST be ready, tested, and operational before the first bus arrives at port. This is the single most critical dependency — no chargers equals no operations.</div>
+      </div>
+      <div class="principle">
+        <div class="principle-num">4</div>
+        <div class="principle-text"><strong>Hire and train drivers now.</strong> The 90-day pre-arrival window is the only window to build the human capital required. A bus without a trained driver is a liability, not an asset.</div>
+      </div>
+      <div class="principle">
+        <div class="principle-num">5</div>
+        <div class="principle-text"><strong>Cashless from Day 1.</strong> Revenue leakage in cash systems is a known challenge in Grenada's paratransit. GTC must launch with digital payment from Day 1, even if a cash backup exists initially.</div>
+      </div>
+      <div class="principle">
+        <div class="principle-num">6</div>
+        <div class="principle-text"><strong>Dedicated Programme Manager required.</strong> A new or redeployed Electric Bus Programme Manager must be appointed. The CEO cannot absorb this workload into existing responsibilities.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. ROUTES -->
+  <div class="section" id="routes">
+    <div class="section-header">
+      <div class="section-num">02</div>
+      <div class="section-title">Route strategy & fleet allocation</div>
+    </div>
+
+    <div class="callout callout-success" style="margin-bottom: 28px; margin-top: 0;">
+      <h4>Strategic recommendation: Concentrate (Option B)</h4>
+      <p>Fully populate 3 routes with sufficient buses to deliver 15–30 minute headways during peak hours. Do not spread thinly across many routes — frequency below this threshold will not change commuter behaviour.</p>
+    </div>
+
+    <div class="card-grid card-grid-3" style="margin-bottom: 24px;">
+      <div class="route-card">
+        <div class="route-color" style="background: #D4A017;"></div>
+        <span class="badge badge-gold">Phase 1A · Day 15</span>
+        <h3 style="margin-top: 10px;">Zone 1 — Grand Anse Corridor</h3>
+        <p class="route-desc">Highest ridership route in Grenada. Serves tourism hub and university community. The showcase route — seen by tourists, diplomats, and international media.</p>
+        <div class="route-stat"><span class="rs-label">Distance</span><span class="rs-val">~17–22 km</span></div>
+        <div class="route-stat"><span class="rs-label">Operating buses</span><span class="rs-val">10 + 2 spare</span></div>
+        <div class="route-stat"><span class="rs-label">Peak headway</span><span class="rs-val">Every 15 min</span></div>
+        <div class="route-stat"><span class="rs-label">Service hours</span><span class="rs-val">6:00 AM – 8:00 PM</span></div>
+        <div class="route-stat"><span class="rs-label">Daily energy / bus</span><span class="rs-val">~35–45 kWh / trip</span></div>
+      </div>
+      <div class="route-card">
+        <div class="route-color" style="background: #888780;"></div>
+        <span class="badge badge-blue">Phase 1B · Month 2</span>
+        <h3 style="margin-top: 10px;">Zone 6 — St. George's to Grenville via Grand Etang</h3>
+        <p class="route-desc">Main inter-parish spine connecting the capital to the second city. Tests full battery range in hilly terrain. High political visibility.</p>
+        <div class="route-stat"><span class="rs-label">Distance</span><span class="rs-val">44 km one way</span></div>
+        <div class="route-stat"><span class="rs-label">Operating buses</span><span class="rs-val">8 + 2 spare</span></div>
+        <div class="route-stat"><span class="rs-label">Peak headway</span><span class="rs-val">Every 30 min</span></div>
+        <div class="route-stat"><span class="rs-label">Service hours</span><span class="rs-val">6:00 AM – 7:00 PM</span></div>
+        <div class="route-stat"><span class="rs-label">Daily energy / bus</span><span class="rs-val">~80–90 kWh / trip</span></div>
+      </div>
+      <div class="route-card">
+        <div class="route-color" style="background: #BA7517;"></div>
+        <span class="badge badge-amber">Phase 1C · Month 3</span>
+        <h3 style="margin-top: 10px;">Zone 5 — St. George's to Sauteurs (West Coast)</h3>
+        <p class="route-desc">Range-critical route validating bus capability. 78 km one way. High social value — serves communities with currently inadequate transport.</p>
+        <div class="route-stat"><span class="rs-label">Distance</span><span class="rs-val">78 km one way</span></div>
+        <div class="route-stat"><span class="rs-label">Operating buses</span><span class="rs-val">10 + 2 spare</span></div>
+        <div class="route-stat"><span class="rs-label">Peak headway</span><span class="rs-val">Every 45 min</span></div>
+        <div class="route-stat"><span class="rs-label">Service hours</span><span class="rs-val">5:30 AM – 7:00 PM</span></div>
+        <div class="route-stat"><span class="rs-label">Daily energy / bus</span><span class="rs-val">~140–160 kWh / trip</span></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom: 16px;">
+      <p style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary); margin-bottom: 16px;">Complete fleet allocation</p>
+      <div class="charge-row header">
+        <span>Route</span><span>Operating</span><span>Spare</span><span>Notes</span>
+      </div>
+      <div class="charge-row">
+        <span><strong>Phase 1A</strong> — Zone 1 Grand Anse</span>
+        <span>10 buses</span>
+        <span>2</span>
+        <span>High frequency; multiple daily rotations; needs backup</span>
+      </div>
+      <div class="charge-row">
+        <span><strong>Phase 1B</strong> — Zone 6 Grand Etang / Grenville</span>
+        <span>8 buses</span>
+        <span>2</span>
+        <span>Long route (44 km); two buses always charging while others operate</span>
+      </div>
+      <div class="charge-row">
+        <span><strong>Phase 1C</strong> — Zone 5 Gouyave / Sauteurs</span>
+        <span>10 buses</span>
+        <span>2</span>
+        <span>Charging window at terminal; 10 operating, 2 charging/standby</span>
+      </div>
+      <div class="charge-row">
+        <span><strong>Phase 2A</strong> — New Express Grenville–Grand Anse</span>
+        <span>5 buses</span>
+        <span>1</span>
+        <span>Peak-only service initially; grows with demand</span>
+      </div>
+      <div class="charge-row">
+        <span><strong>Phase 2B</strong> — Zone 2 Eastern Main Road</span>
+        <span>5 buses</span>
+        <span>1</span>
+        <span>Supplements existing paratransit; partial coverage initially</span>
+      </div>
+      <div class="charge-row" style="border-top: 1.5px solid var(--text); font-weight: 600;">
+        <span>Fleet reserve / maintenance buffer</span>
+        <span>—</span>
+        <span>5</span>
+        <span>Ensures ≥90% fleet availability at all times</span>
+      </div>
+      <div class="charge-row" style="font-weight: 700; font-size: 14px; border-bottom: none;">
+        <span>Total (40 buses)</span>
+        <span>38–48</span>
+        <span>13</span>
+        <span>All Phase 1 routes fully covered with 40 buses</span>
+      </div>
+    </div>
+
+    <div class="card-grid card-grid-2">
+      <div class="card">
+        <p style="font-size: 13px; font-weight: 600; margin-bottom: 12px;">Timetabling principles</p>
+        <ul style="font-size: 13px; line-height: 2; padding-left: 18px; color: var(--text);">
+          <li>Publish <strong>fixed timetables from Day 1</strong> — fixed departure times build passenger trust</li>
+          <li>Peak hours (6–9 AM, 3–6:30 PM): maximum frequency</li>
+          <li>Off-peak: reduced frequency — Zone 1 every 25 min</li>
+          <li>Evening service to 8:30 PM on Zone 1 (tourist demand)</li>
+          <li>Sunday / public holiday: 50% frequency + EC$0.50 surcharge</li>
+          <li>10–15 min layover at each terminal for charging & driver rest</li>
+        </ul>
+      </div>
+      <div class="card">
+        <p style="font-size: 13px; font-weight: 600; margin-bottom: 12px;">Phase 2 routes (months 7–9)</p>
+        <div style="font-size: 13px; line-height: 1.8;">
+          <p style="margin-bottom: 8px;"><strong>New Express: Grenville → Grand Anse</strong><br><span style="color: var(--text-secondary);">~60 km bypass of St. George's; peaks-only initially; directly connects east coast to Grand Anse</span></p>
+          <p><strong>Zone 2: Eastern Main Road</strong><br><span style="color: var(--text-secondary);">St. George's → Grenville via Calivigny/Westerhall; 66 km; covers different communities from Zone 6</span></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. CHARGING -->
+  <div class="section" id="charging">
+    <div class="section-header">
+      <div class="section-num">03</div>
+      <div class="section-title">Charging infrastructure strategy</div>
+    </div>
+
+    <div class="callout callout-critical" style="margin-top: 0; margin-bottom: 24px;">
+      <h4>Critical path — longest lead-time item in the entire programme</h4>
+      <p>Charging infrastructure must be ready, tested, and operational before the first bus arrives. GRENLEC may need to install a new transformer at the depot (3–6 months). The GTC CEO must write to GRENLEC within 5 days of plan approval.</p>
+    </div>
+
+    <div class="card" style="margin-bottom: 24px;">
+      <p style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary); margin-bottom: 16px;">Charging strategy by route</p>
+      <div class="charge-row header">
+        <span>Route</span><span>Energy per trip</span><span>Charging strategy</span><span>Infrastructure required</span>
+      </div>
+      <div class="charge-row">
+        <span><strong>Zone 1</strong> — Grand Anse (10 buses, 17–22 km)</span>
+        <span>~35–45 kWh</span>
+        <span>Opportunity charge at Grand Anse terminal (30 min) + overnight full charge</span>
+        <span>2 × 60 kW DC fast chargers at Grand Anse terminal + 10 × 22 kW AC overnight at depot</span>
+      </div>
+      <div class="charge-row">
+        <span><strong>Zone 6</strong> — Grenville (8 buses, 44 km)</span>
+        <span>~80–90 kWh</span>
+        <span>Full charge before each departure; charge window at Grenville terminal (60–90 min layover)</span>
+        <span>2 × 120 kW DC chargers at Grenville terminal + 8 × 22 kW AC at depot</span>
+      </div>
+      <div class="charge-row">
+        <span><strong>Zone 5</strong> — Sauteurs (10 buses, 78 km)</span>
+        <span>~140–160 kWh</span>
+        <span>Must charge at Sauteurs terminal (90–120 min); overnight full charge mandatory</span>
+        <span>2 × 120 kW DC chargers at Sauteurs terminal + 10 × 22 kW AC overnight at depot</span>
+      </div>
+      <div class="charge-row">
+        <span><strong>Depot base</strong> — all buses overnight</span>
+        <span>200–250 kWh / bus</span>
+        <span>8-hour window (10 PM – 6 AM); stagger charging to manage grid demand; smart CMS</span>
+        <span>Min. 15 × 22 kW AC chargers (Phase 1), expandable to 50+; smart charge management system</span>
+      </div>
+      <div class="charge-row" style="border-bottom: none;">
+        <span><strong>Maintenance spares</strong> (5 reserve buses)</span>
+        <span>As needed</span>
+        <span>Plug-in upon return from any deployment</span>
+        <span>3 × dedicated spare chargers at maintenance bay</span>
+      </div>
+    </div>
+
+    <div class="card-grid card-grid-3">
+      <div class="card">
+        <p style="font-size: 13px; font-weight: 600; margin-bottom: 8px;">Depot peak demand</p>
+        <p style="font-size: 28px; font-family: 'Fraunces', serif; font-weight: 700; color: var(--text);">330 kW</p>
+        <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">15 × 22 kW AC chargers simultaneous. New transformer likely required from GRENLEC.</p>
+      </div>
+      <div class="card">
+        <p style="font-size: 13px; font-weight: 600; margin-bottom: 8px; color: var(--red);">Critical: Connector standard</p>
+        <p style="font-size: 13px; line-height: 1.6; color: var(--text);">Chinese buses typically use <strong>GB/T 20234.3 DC</strong> — different from the CCS2 standard used in Europe and the Americas. GTC must confirm this with the OEM in <strong>Week 1</strong>. Wrong chargers = no operations.</p>
+      </div>
+      <div class="card">
+        <p style="font-size: 13px; font-weight: 600; margin-bottom: 8px;">Solar PV opportunity</p>
+        <p style="font-size: 13px; line-height: 1.6; color: var(--text);">Explore a GRENLEC solar PV Power Purchase Agreement (PPA) for depot rooftop solar panels to offset charging costs. Install a smart CMS to stagger charging and avoid simultaneous peak demand.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. MASTER SCHEDULE -->
+  <div class="section" id="schedule">
+    <div class="section-header">
+      <div class="section-num">04</div>
+      <div class="section-title">Master implementation schedule</div>
+    </div>
+
+    <div class="card-grid card-grid-2">
+      <div>
+        <div class="timeline">
+          <div class="timeline-item critical">
+            <div class="tl-phase">Pre-arrival — Months 1–3</div>
+            <div class="tl-items">
+              <div class="tl-item-row"><span>Establish EBITF task force</span><span class="tl-owner">GTC CEO · Wk 1</span></div>
+              <div class="tl-item-row"><span>GRENLEC grid capacity study</span><span class="tl-owner">Technical · Wk 2</span></div>
+              <div class="tl-item-row"><span>Secure depot site (min. 1 acre)</span><span class="tl-owner">Ops + MoPW · Wk 2</span></div>
+              <div class="tl-item-row"><span>Engage AG's Chambers — EV registration order</span><span class="tl-owner">CEO + AG · Wk 3</span></div>
+              <div class="tl-item-row"><span>Draft driver employment contracts</span><span class="tl-owner">HR · Wk 3</span></div>
+              <div class="tl-item-row"><span>Issue RFP for EV charging equipment</span><span class="tl-owner">Technical · Wk 4</span></div>
+              <div class="tl-item-row"><span>NBA coexistence consultation</span><span class="tl-owner">CEO + NBA · Mo 2</span></div>
+              <div class="tl-item-row"><span>Procure payment hardware (NFC validators)</span><span class="tl-owner">IT · Mo 2</span></div>
+              <div class="tl-item-row"><span>Recruit & train 70–90 drivers</span><span class="tl-owner">HR + TAMCC · Mo 2</span></div>
+              <div class="tl-item-row"><span>Install depot charging infrastructure</span><span class="tl-owner">Technical + GRENLEC · Mo 2–3</span></div>
+              <div class="tl-item-row"><span>Finalize insurance for fleet</span><span class="tl-owner">Finance · Mo 2</span></div>
+              <div class="tl-item-row"><span>Design Phase 1 route timetables</span><span class="tl-owner">Transport Planner · Mo 2</span></div>
+              <div class="tl-item-row"><span>Public comms campaign: "The New Grenada Bus is Coming"</span><span class="tl-owner">Comms · Mo 2–3</span></div>
+              <div class="tl-item-row"><span>Finalize concession agreement framework</span><span class="tl-owner">AG's + CEO · Mo 3</span></div>
+            </div>
+          </div>
+
+          <div class="timeline-item active">
+            <div class="tl-phase">Arrival & commissioning — Month 4</div>
+            <div class="tl-items">
+              <div class="tl-item-row"><span>Bus arrival at port; customs clearance (duty-free under MOU)</span><span class="tl-owner">Ops + Customs · Day 1</span></div>
+              <div class="tl-item-row"><span>Physical inspection of all buses (technical + cosmetic)</span><span class="tl-owner">Technical + OEM · Day 1–2</span></div>
+              <div class="tl-item-row"><span>Registration under interim EV order</span><span class="tl-owner">Licensing · Day 2–5</span></div>
+              <div class="tl-item-row"><span>Drive buses to depot; first charge</span><span class="tl-owner">Ops + Technical · Day 3–5</span></div>
+              <div class="tl-item-row"><span>Chinese OEM technical training (5–10 days)</span><span class="tl-owner">OEM Trainers · Day 3–14</span></div>
+              <div class="tl-item-row"><span>Install payment validators; end-to-end test</span><span class="tl-owner">IT + Vendor · Day 5–10</span></div>
+              <div class="tl-item-row"><span>Trial runs on Phase 1 routes (empty buses, range tests)</span><span class="tl-owner">Planners + Drivers · Day 10–14</span></div>
+              <div class="tl-item-row"><span>Soft launch: <strong>free rides for 2 weeks</strong> on Phase 1 routes</span><span class="tl-owner">CEO + Comms · Day 15</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="tl-phase">Phase 1 operations — Months 4–12</div>
+            <div class="tl-items">
+              <div class="tl-item-row"><span>Full commercial operations begin (Zones 1, 6, 5)</span><span class="tl-owner">Ops · Mo 5</span></div>
+              <div class="tl-item-row"><span>Cashless payment system go-live (parallel cash 60 days)</span><span class="tl-owner">IT · Mo 5</span></div>
+              <div class="tl-item-row"><span>Daily operational review: ridership, charging, incidents</span><span class="tl-owner">Ops · Daily</span></div>
+              <div class="tl-item-row"><span>First monthly fleet maintenance cycle (OEM-specified)</span><span class="tl-owner">Technical · Monthly</span></div>
+              <div class="tl-item-row"><span>Expand to Phase 2 routes (80%+ reliability achieved)</span><span class="tl-owner">Transport · Mo 7–8</span></div>
+              <div class="tl-item-row"><span>Road Traffic Act EV amendment (formal)</span><span class="tl-owner">CEO + AG + MoI · Mo 6–9</span></div>
+              <div class="tl-item-row"><span>Mid-year review: financial sustainability, ridership</span><span class="tl-owner">CEO + Board + MoF · Mo 7</span></div>
+              <div class="tl-item-row"><span>Commence Phase 2 fleet procurement planning</span><span class="tl-owner">CEO + Board + CDB · Mo 8</span></div>
+            </div>
+          </div>
+
+          <div class="timeline-item">
+            <div class="tl-phase">Phase 2 planning — Months 9–18</div>
+            <div class="tl-items">
+              <div class="tl-item-row"><span>Issue procurement for Phase 2 fleet (40–60 additional buses)</span><span class="tl-owner">CEO + Board · Mo 9</span></div>
+              <div class="tl-item-row"><span>Expand depot charging to 35+ chargers for full fleet</span><span class="tl-owner">Technical + GRENLEC · Mo 9–12</span></div>
+              <div class="tl-item-row"><span>Phase out oldest NBA minibuses via scrappage incentive</span><span class="tl-owner">CEO + NBA + MoF · Mo 12–18</span></div>
+              <div class="tl-item-row"><span>Full cashless payment mandate on all GTC EB routes</span><span class="tl-owner">IT + CEO · Mo 12</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. HR -->
+  <div class="section" id="hr">
+    <div class="section-header">
+      <div class="section-num">05</div>
+      <div class="section-title">Human resources plan</div>
+    </div>
+
+    <div class="card-grid card-grid-3" style="margin-bottom: 24px;">
+      <div class="metric-card">
+        <div class="m-label">Total Phase 1 staff</div>
+        <div class="m-val">100–120</div>
+        <div class="m-sub">All functions combined</div>
+      </div>
+      <div class="metric-card">
+        <div class="m-label">Drivers required</div>
+        <div class="m-val">70–90</div>
+        <div class="m-sub">CDL holders; GTC employees</div>
+      </div>
+      <div class="metric-card">
+        <div class="m-label">Driver base salary</div>
+        <div class="m-val">EC$2,000–2,800</div>
+        <div class="m-sub">Per month + shift + performance bonus</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom: 20px;">
+      <p style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary); margin-bottom: 14px;">Staffing requirements</p>
+      <div class="staff-role header">
+        <span>Role</span><span>Headcount</span><span>Key responsibilities</span>
+      </div>
+      <div class="staff-role">
+        <span><strong>Electric Bus Programme Manager</strong> <span class="badge badge-red">Critical hire</span></span>
+        <span>1</span>
+        <span>Oversees entire EB programme; reports to CEO; single point of accountability. Senior transport manager with project management experience.</span>
+      </div>
+      <div class="staff-role">
+        <span><strong>Fleet Operations Manager</strong></span>
+        <span>1</span>
+        <span>Day-to-day bus dispatch, route management, driver supervision, incident response. Must be hands-on. Works shifts.</span>
+      </div>
+      <div class="staff-role">
+        <span><strong>EV Technical Manager / Chief Mechanic</strong></span>
+        <span>1</span>
+        <span>Oversees maintenance, repairs, charging infrastructure, spare parts. Must have or obtain EV certification. Chinese OEM trains on arrival.</span>
+      </div>
+      <div class="staff-role">
+        <span><strong>EV Mechanics / Technicians</strong></span>
+        <span>3–4</span>
+        <span>Routine and preventive maintenance, charging system monitoring, fault diagnosis. TAMCC graduates prioritised. Fast-track EV mechanics course.</span>
+      </div>
+      <div class="staff-role">
+        <span><strong>Bus Drivers</strong></span>
+        <span>70–90</span>
+        <span>Operate buses safely on assigned routes; collect fares; manage passengers. Must hold valid CDL. GTC provides EV-specific and customer service training.</span>
+      </div>
+      <div class="staff-role">
+        <span><strong>Dispatchers / Controllers</strong></span>
+        <span>4–6</span>
+        <span>Real-time route monitoring; driver communication; schedule adherence; incident coordination. Two shifts. Must be comfortable with TMS software.</span>
+      </div>
+      <div class="staff-role">
+        <span><strong>Finance / Revenue Officer</strong></span>
+        <span>1</span>
+        <span>Daily revenue reconciliation; cashless payment system management; reporting to MoF.</span>
+      </div>
+      <div class="staff-role">
+        <span><strong>IT / Digital Systems Officer</strong></span>
+        <span>1</span>
+        <span>Manage TMS, payment platform, GPS tracking, data analytics. Central to the digital transformation of the service.</span>
+      </div>
+      <div class="staff-role">
+        <span><strong>Customer Service / Comms Officer</strong></span>
+        <span>1</span>
+        <span>Passenger complaints, public communications, social media, fare enquiries. Public face of the new service.</span>
+      </div>
+      <div class="staff-role" style="border-bottom: none;">
+        <span><strong>Depot Security</strong></span>
+        <span>2–3 / shift</span>
+        <span>24/7 depot security; access control; CCTV monitoring; asset protection. Private security contract. Depot must be secured from Day 1 of bus arrival.</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <p style="font-size: 13px; font-weight: 600; margin-bottom: 14px;">Driver recruitment & training timeline</p>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+        <div style="font-size: 13px; padding: 12px; background: var(--gray-light); border-radius: var(--radius-sm);">
+          <p style="font-weight: 600; margin-bottom: 4px; color: var(--text-secondary); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;">Week 1–2</p>
+          <p>Publish job advertisement nationally. Minimum: valid CDL or CDL eligibility, clean driving record.</p>
+        </div>
+        <div style="font-size: 13px; padding: 12px; background: var(--gray-light); border-radius: var(--radius-sm);">
+          <p style="font-weight: 600; margin-bottom: 4px; color: var(--text-secondary); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;">Week 3–4</p>
+          <p>Application screening. CDL verification with RGPF. Background check. Interview focusing on attitude and customer service.</p>
+        </div>
+        <div style="font-size: 13px; padding: 12px; background: var(--gray-light); border-radius: var(--radius-sm);">
+          <p style="font-weight: 600; margin-bottom: 4px; color: var(--text-secondary); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;">Week 5–8</p>
+          <p>CDL upgrade training for drivers who hold Class 2 (minibus) but not Class 1 (bus). TAMCC partnership required.</p>
+        </div>
+        <div style="font-size: 13px; padding: 12px; background: var(--gray-light); border-radius: var(--radius-sm);">
+          <p style="font-weight: 600; margin-bottom: 4px; color: var(--text-secondary); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;">Month 2–3</p>
+          <p>EV-specific induction (classroom): EV safety, BMS basics, charging procedures, emergency response.</p>
+        </div>
+        <div style="font-size: 13px; padding: 12px; background: var(--gray-light); border-radius: var(--radius-sm);">
+          <p style="font-weight: 600; margin-bottom: 4px; color: var(--text-secondary); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;">On bus arrival</p>
+          <p>OEM technical trainers deliver 5–10 day hands-on bus familiarisation programme on-site.</p>
+        </div>
+        <div style="font-size: 13px; padding: 12px; background: var(--gray-light); border-radius: var(--radius-sm);">
+          <p style="font-weight: 600; margin-bottom: 4px; color: var(--text-secondary); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;">Pre-launch</p>
+          <p>Trial runs for 2 weeks (empty buses on routes) before first passenger trip.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. PAYMENT -->
+  <div class="section" id="payment">
+    <div class="section-header">
+      <div class="section-num">06</div>
+      <div class="section-title">Payment systems & fare structure</div>
+    </div>
+    <div class="card-grid card-grid-2" style="margin-bottom: 20px;">
+      <div>
+        <div class="payment-phase">
+          <h4>Phase 1 launch (Month 5): Dual payment</h4>
+          <p>Cash to driver (paper receipt; deposited daily to GTC revenue account) + tap-to-pay NFC contactless bank card or mobile wallet at on-bus validator + QR code at door for app purchase before boarding.</p>
+        </div>
+        <div class="payment-phase" style="border-left-color: var(--green); background: var(--green-light);">
+          <h4 style="color: var(--green);">Phase 2 (Month 6–12): Spice Card introduced</h4>
+          <p>Contactless prepaid smart card available at terminals, supermarkets, and online. Discounted fare: EC$2.20 vs EC$2.50 cash (Zone 1). Monthly pass: EC$120 for unlimited Zone 1 trips. Student card integration with subsidised pass.</p>
+        </div>
+        <div class="payment-phase" style="border-left-color: var(--blue); background: var(--blue-light);">
+          <h4 style="color: var(--blue);">Month 12: Full cashless mandate</h4>
+          <p>100% cashless on all GTC EB routes. Target: 50% cashless adoption by Month 6; 90% by Month 12. Data from cashless system feeds network planning and KPI tracking.</p>
+        </div>
+      </div>
+      <div class="card">
+        <p style="font-size: 13px; font-weight: 600; margin-bottom: 14px;">Fare structure (mirrors regulated fares)</p>
+        <div style="font-size: 14px;">
+          <div class="route-stat" style="padding: 10px 0; border-bottom: 0.5px solid var(--border);">
+            <span style="font-size: 13px; color: var(--text-secondary);">Zone 1 — Grand Anse (adult)</span>
+            <span style="font-family: 'Fraunces', serif; font-size: 18px; font-weight: 700;">EC$2.50</span>
+          </div>
+          <div class="route-stat" style="padding: 10px 0; border-bottom: 0.5px solid var(--border);">
+            <span style="font-size: 13px; color: var(--text-secondary);">Zone 6 — Grenville</span>
+            <span style="font-family: 'Fraunces', serif; font-size: 18px; font-weight: 700;">EC$6.00</span>
+          </div>
+          <div class="route-stat" style="padding: 10px 0; border-bottom: 0.5px solid var(--border);">
+            <span style="font-size: 13px; color: var(--text-secondary);">Zone 5 — Sauteurs</span>
+            <span style="font-family: 'Fraunces', serif; font-size: 18px; font-weight: 700;">EC$6.00</span>
+          </div>
+          <div class="route-stat" style="padding: 10px 0; border-bottom: 0.5px solid var(--border);">
+            <span style="font-size: 13px; color: var(--text-secondary);">Spice Card discount (Zone 1)</span>
+            <span style="font-family: 'Fraunces', serif; font-size: 18px; font-weight: 700;">EC$2.20</span>
+          </div>
+          <div class="route-stat" style="padding: 10px 0; border-bottom: 0.5px solid var(--border);">
+            <span style="font-size: 13px; color: var(--text-secondary);">Monthly pass (Zone 1)</span>
+            <span style="font-family: 'Fraunces', serif; font-size: 18px; font-weight: 700;">EC$120</span>
+          </div>
+          <div class="route-stat" style="padding: 10px 0;">
+            <span style="font-size: 13px; color: var(--text-secondary);">Sunday / public holiday surcharge</span>
+            <span style="font-family: 'Fraunces', serif; font-size: 18px; font-weight: 700;">+EC$0.50</span>
+          </div>
+        </div>
+        <div style="font-size: 12px; color: var(--text-secondary); margin-top: 12px; padding: 10px; background: var(--gray-light); border-radius: var(--radius-sm);">
+          Fares initially mirror existing regulated structure to avoid triggering Road Traffic Act Ministerial approval process for fare changes. GTC's value proposition is reliability and comfort — not price undercutting.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. LEGAL -->
+  <div class="section" id="legal">
+    <div class="section-header">
+      <div class="section-num">07</div>
+      <div class="section-title">Legal & regulatory framework</div>
+    </div>
+    <div class="card">
+      <div class="legal-item header">
+        <span>Legal action required</span><span>Priority & timing</span><span>Responsible party</span>
+      </div>
+      <div class="legal-item">
+        <span><strong>EV Registration & Licensing (Interim Ministerial Order)</strong><br><span style="color: var(--text-secondary); font-size: 12px;">Road Traffic Act (Cap 289A) has no current EV provision. Cabinet can issue interim ministerial order for temporary EV registration while formal amendment is drafted.</span></span>
+        <span><span class="badge badge-red">Critical — before bus arrival</span><br><span style="font-size: 12px; color: var(--text-secondary);">Target: 30 days from project start</span></span>
+        <span>GTC CEO + AG's Chambers</span>
+      </div>
+      <div class="legal-item">
+        <span><strong>Road Traffic Act — Formal EV Amendment</strong><br><span style="color: var(--text-secondary); font-size: 12px;">Add EV definitions, registration standards, charging infrastructure powers, and operator licensing for electric PSVs.</span></span>
+        <span><span class="badge badge-amber">High — within 6 months</span></span>
+        <span>AG's Chambers + MoI</span>
+      </div>
+      <div class="legal-item">
+        <span><strong>Bus Fleet Concession / Operating Agreement</strong><br><span style="color: var(--text-secondary); font-size: 12px;">New legal instrument. Defines GTC's role as operator, revenue rights, Chinese government asset transfer/lease terms, liability, insurance obligations, termination clauses.</span></span>
+        <span><span class="badge badge-red">Critical — before operations</span></span>
+        <span>AG's Chambers + GTC CEO + Cabinet</span>
+      </div>
+      <div class="legal-item">
+        <span><strong>Driver Employment Contracts</strong><br><span style="color: var(--text-secondary); font-size: 12px;">Formal employment (not contractor) relationships. Include shift scheduling, EV-specific safety obligations, probation periods, and disciplinary procedures.</span></span>
+        <span><span class="badge badge-red">Critical — before driver training</span></span>
+        <span>GTC HR Manager + Legal Counsel</span>
+      </div>
+      <div class="legal-item">
+        <span><strong>Insurance (Fleet + Liability)</strong><br><span style="color: var(--text-secondary); font-size: 12px;">Hull & machinery for entire fleet. Passenger liability (min. EC$2M per incident). Employer's liability for drivers.</span></span>
+        <span><span class="badge badge-red">Critical — before first trip</span></span>
+        <span>GTC Finance + Insurance Broker</span>
+      </div>
+      <div class="legal-item">
+        <span><strong>Customs Duty Waiver for Bus Fleet</strong><br><span style="color: var(--text-secondary); font-size: 12px;">EV buses and charging equipment classified duty-free under government-to-government agreement. Formal application required under SRO 43 of 2020.</span></span>
+        <span><span class="badge badge-red">Critical — before port clearance</span></span>
+        <span>GTC CEO + MoF + Customs</span>
+      </div>
+      <div class="legal-item">
+        <span><strong>St. George's Terminal Vesting Order</strong><br><span style="color: var(--text-secondary); font-size: 12px;">GTC must have legal control of terminal to manage bus bays for EB fleet. Coordinate with Marlon Clyne at Port Authority.</span></span>
+        <span><span class="badge badge-amber">High — 2026</span></span>
+        <span>GTC CEO + Port Authority + AG</span>
+      </div>
+      <div class="legal-item">
+        <span><strong>NBA Coexistence Agreement (MOU)</strong><br><span style="color: var(--text-secondary); font-size: 12px;">Defines which routes are GTC-operated, which remain NBA, transition timeline, and dispute resolution mechanism.</span></span>
+        <span><span class="badge badge-amber">High — before route launch</span></span>
+        <span>GTC CEO + NBA President</span>
+      </div>
+      <div class="legal-item" style="border-bottom: none;">
+        <span><strong>GRENLEC Grid Connection Agreement</strong><br><span style="color: var(--text-secondary); font-size: 12px;">Formal application for new meter point, load increase approval, and connection agreement for depot charging infrastructure.</span></span>
+        <span><span class="badge badge-red">Critical — before charger install</span></span>
+        <span>GTC Technical + GRENLEC</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8. NBA TRANSITION -->
+  <div class="section" id="nba">
+    <div class="section-header">
+      <div class="section-num">08</div>
+      <div class="section-title">Coexistence with the NBA</div>
+    </div>
+    <div class="callout callout-warning" style="margin-top: 0; margin-bottom: 24px;">
+      <h4>The greatest threat to this programme is not technical — it's political</h4>
+      <p>If the NBA perceives the electric bus fleet as a hostile takeover, they have the numbers, community ties, and historical precedent to mobilise effectively against GTC. GTC EBs launch on new capacity and express routes — positioned as an upgrade, not a replacement.</p>
+    </div>
+
+    <div class="nba-phase">
+      <h4><span class="badge badge-gold" style="margin-right: 8px;">Months 1–3</span> Pre-arrival — fully cooperative</h4>
+      <div class="nba-grid">
+        <div class="nba-col"><div class="ncol-title">NBA status</div>Operates all routes as normal. No disruption to current operators.</div>
+        <div class="nba-col"><div class="ncol-title">GTC actions</div>Prepares infrastructure, recruits drivers, develops routes. Informs and consults NBA throughout.</div>
+      </div>
+    </div>
+    <div class="nba-phase">
+      <h4><span class="badge badge-blue" style="margin-right: 8px;">Month 4</span> Soft launch — potential Zone 1 friction</h4>
+      <div class="nba-grid">
+        <div class="nba-col"><div class="ncol-title">NBA status</div>Continues all routes. Zone 1 private operators see new competition on Grand Anse corridor.</div>
+        <div class="nba-col"><div class="ncol-title">GTC strategy</div>Positioned as "additional service" not replacement. Aims to grow ridership rather than displace operators immediately.</div>
+      </div>
+    </div>
+    <div class="nba-phase">
+      <h4><span class="badge badge-amber" style="margin-right: 8px;">Months 5–7</span> Phase 1 full operations — passengers choose</h4>
+      <div class="nba-grid">
+        <div class="nba-col"><div class="ncol-title">NBA status</div>Coexists with GTC EBs on same corridors. NBA older buses should NOT be displaced — they provide overflow and feeder capacity.</div>
+        <div class="nba-col"><div class="ncol-title">GTC strategy</div>Establishes brand; focuses on reliability and comfort advantage. Fixed schedules vs NBA fill-and-go model.</div>
+      </div>
+    </div>
+    <div class="nba-phase">
+      <h4><span class="badge badge-green" style="margin-right: 8px;">Year 2+</span> Managed transition — NBA transformed, not eliminated</h4>
+      <div class="nba-grid">
+        <div class="nba-col"><div class="ncol-title">NBA pathways</div>Feeder route permits; scrappage incentive for buses 15+ years old; driver priority recruitment pathway; subcontract model on rural routes.</div>
+        <div class="nba-col"><div class="ncol-title">GTC actions</div>SRO 43 vehicle age enforcement + scrappage incentives. NBA partnership model formally activated. Cashless payment data shows route performance.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 9. TECHNOLOGY -->
+  <div class="section" id="tech">
+    <div class="section-header">
+      <div class="section-num">09</div>
+      <div class="section-title">Technology, software & suppliers</div>
+    </div>
+    <div class="card-grid card-grid-2">
+      <div class="card">
+        <p style="font-size: 13px; font-weight: 600; margin-bottom: 14px;">Core software systems</p>
+        <div style="font-size: 13px; display: flex; flex-direction: column; gap: 10px;">
+          <div style="padding: 10px; background: var(--gray-light); border-radius: var(--radius-sm);">
+            <p style="font-weight: 600; margin-bottom: 3px;">Transport Management System (TMS)</p>
+            <p style="color: var(--text-secondary); font-size: 12px;">Remix, Optibus, Clever Devices, or SWJTU-recommended Chinese system. Real-time GPS tracking, route scheduling, driver performance, incident logging.</p>
+          </div>
+          <div style="padding: 10px; background: var(--gray-light); border-radius: var(--radius-sm);">
+            <p style="font-weight: 600; margin-bottom: 3px;">Cashless Payment Platform</p>
+            <p style="color: var(--text-secondary); font-size: 12px;">WiPay Caribbean (ECCB-compliant) or Masabi Justride. NFC/QR tap-on-tap-off. WiPay strongly recommended for local support.</p>
+          </div>
+          <div style="padding: 10px; background: var(--gray-light); border-radius: var(--radius-sm);">
+            <p style="font-weight: 600; margin-bottom: 3px;">Passenger App (Spice Bus)</p>
+            <p style="color: var(--text-secondary); font-size: 12px;">Real-time bus tracking, next bus prediction, payment, notifications. Can be white-labelled from payment vendor in Phase 1.</p>
+          </div>
+          <div style="padding: 10px; background: var(--gray-light); border-radius: var(--radius-sm);">
+            <p style="font-weight: 600; margin-bottom: 3px;">Charging Management System (CMS)</p>
+            <p style="color: var(--text-secondary); font-size: 12px;">ABB Ability, Kempower, or bundled with charger OEM. Monitors charging status, energy consumption, smart scheduling to avoid GRENLEC peak tariff.</p>
+          </div>
+          <div style="padding: 10px; background: var(--gray-light); border-radius: var(--radius-sm);">
+            <p style="font-weight: 600; margin-bottom: 3px;">KPI Dashboard (BI)</p>
+            <p style="color: var(--text-secondary); font-size: 12px;">Power BI, Tableau, or Metabase (free). Real-time dashboard for CEO and Board: ridership, revenue, fleet availability, energy consumption, punctuality.</p>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <p style="font-size: 13px; font-weight: 600; margin-bottom: 14px;">Key supply categories</p>
+        <div style="font-size: 13px; display: flex; flex-direction: column; gap: 10px;">
+          <div style="padding: 10px; background: var(--blue-light); border-radius: var(--radius-sm);">
+            <p style="font-weight: 600; margin-bottom: 3px; color: var(--blue);">EV Bus OEM</p>
+            <p style="color: var(--text); font-size: 12px;">Confirm manufacturer (Yutong, BYD, King Long, Higer, or CRRC). Secure service agreement: spare parts, technical training, warranty min. 3 years drivetrain, remote diagnostics access.</p>
+          </div>
+          <div style="padding: 10px; background: var(--amber-light); border-radius: var(--radius-sm);">
+            <p style="font-weight: 600; margin-bottom: 3px; color: var(--amber);">EV Charging Equipment</p>
+            <p style="color: var(--text); font-size: 12px;">ABB, Kempower, BTC Power, or OEM-bundled. Confirm connector standard (GB/T vs CCS2) with OEM FIRST before any procurement. Issue RFP within 30 days.</p>
+          </div>
+          <div style="padding: 10px; background: var(--green-light); border-radius: var(--radius-sm);">
+            <p style="font-weight: 600; margin-bottom: 3px; color: var(--green);">Insurance</p>
+            <p style="color: var(--text); font-size: 12px;">Massy United Insurance, NAGICO, or Lloyd's broker. EV hull insurance is a specialty market — engage broker with electric commercial vehicle experience.</p>
+          </div>
+          <div style="padding: 10px; background: var(--gray-light); border-radius: var(--radius-sm);">
+            <p style="font-weight: 600; margin-bottom: 3px;">Training Provider</p>
+            <p style="color: var(--text-secondary); font-size: 12px;">TAMCC in partnership with Chinese OEM trainers on-site during commissioning. Establish fast-track CDL + EV induction programme jointly.</p>
+          </div>
+          <div style="padding: 10px; background: var(--gray-light); border-radius: var(--radius-sm);">
+            <p style="font-weight: 600; margin-bottom: 3px;">Maintenance / CMMS</p>
+            <p style="color: var(--text-secondary); font-size: 12px;">UpKeep, Fleetio, or OEM's own system. Preventive maintenance scheduling, spare parts inventory, fault logging, warranty tracking. Chinese OEM may bundle.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 10. FINANCING -->
+  <div class="section" id="financing">
+    <div class="section-header">
+      <div class="section-num">10</div>
+      <div class="section-title">Financing plan</div>
+    </div>
+
+    <div class="card" style="margin-bottom: 24px;">
+      <div class="finance-item header">
+        <span>Financing source</span><span>Estimated amount</span><span>Key contact</span>
+      </div>
+      <div class="finance-item">
+        <span><strong>GoG–China MOU (fleet)</strong><br><span style="font-size: 12px; color: var(--text-secondary);">35–45 buses procured under bilateral partnership. GTC operates them under concession. Clarify asset ownership and depreciation with MoF.</span></span>
+        <span><span class="badge badge-green">Already committed</span><br><span style="font-size: 12px;">Buses financed</span></span>
+        <span>GoG / Cabinet</span>
+      </div>
+      <div class="finance-item">
+        <span><strong>GoG Infrastructure Grant</strong><br><span style="font-size: 12px; color: var(--text-secondary);">Depot preparation, charging infrastructure, terminal upgrades. Budget allocation request required.</span></span>
+        <span>EC$1.5M – 3.0M</span>
+        <span>MoF + Cabinet</span>
+      </div>
+      <div class="finance-item">
+        <span><strong>UNEP/GEF — Accelerating E-Mobility Project</strong><br><span style="font-size: 12px; color: var(--text-secondary);">Active project with PSC in place. Can fund charging infrastructure, EV training, technical assistance, policy support. Coordinate with Ms. Nichole Gellineau immediately.</span></span>
+        <span>USD $500K – 2M</span>
+        <span>Ms. Nichole Gellineau (PSC)</span>
+      </div>
+      <div class="finance-item">
+        <span><strong>Caribbean Development Bank (CDB)</strong><br><span style="font-size: 12px; color: var(--text-secondary);">Infrastructure and transport transformation projects. Engage for Phase 2 fleet expansion financing. Use CDB SRBPTP engagement as entry point. Requires GoG sovereign guarantee.</span></span>
+        <span>EC$5M – 20M</span>
+        <span>GoG + GTC + MoF</span>
+      </div>
+      <div class="finance-item">
+        <span><strong>GIZ Technical Assistance</strong><br><span style="font-size: 12px; color: var(--text-secondary);">German development cooperation currently active in Grenada. Can fund SWJTU technical visits, TMS design, policy development. In-kind — no cash transfer.</span></span>
+        <span><span class="badge badge-blue">In-kind TA</span></span>
+        <span>GTC CEO + GIZ NCD-Tech</span>
+      </div>
+      <div class="finance-item">
+        <span><strong>Fare Revenue (operational self-financing)</strong><br><span style="font-size: 12px; color: var(--text-secondary);">Model must show break-even within 24 months. Present financial model to Board in Month 1.</span></span>
+        <span>EC$3M – 6M / year</span>
+        <span>GTC Finance Officer</span>
+      </div>
+      <div class="finance-item" style="border-bottom: none;">
+        <span><strong>Operational Subsidy (GoG)</strong><br><span style="font-size: 12px; color: var(--text-secondary);">Frame as investment in GDP productivity, congestion reduction, and carbon credits. Governments worldwide subsidise public transport.</span></span>
+        <span>EC$1M – 3M / year (if needed)</span>
+        <span>MoF + Cabinet + GTC</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <p style="font-size: 13px; font-weight: 600; margin-bottom: 16px;">Revenue model illustration (Phase 1 daily)</p>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px;">
+        <div class="metric-card">
+          <div class="m-label">Zone 1 daily revenue</div>
+          <div class="m-val">EC$25,000</div>
+          <div class="m-sub">10 buses × 25 trips × 40 pax × EC$2.50</div>
+        </div>
+        <div class="metric-card">
+          <div class="m-label">Zone 6 daily revenue</div>
+          <div class="m-val">EC$9,600</div>
+          <div class="m-sub">8 buses × 4 trips × 50 pax × EC$6.00</div>
+        </div>
+        <div class="metric-card">
+          <div class="m-label">Zone 5 daily revenue</div>
+          <div class="m-val">EC$5,400</div>
+          <div class="m-sub">10 buses × 2 trips × 45 pax × EC$6.00</div>
+        </div>
+        <div class="metric-card" style="background: var(--green-light);">
+          <div class="m-label" style="color: var(--green);">Total daily (Phase 1)</div>
+          <div class="m-val" style="color: var(--green);">EC$40,000</div>
+          <div class="m-sub" style="color: var(--green);">EC$1.2M / month · EC$14.6M / year</div>
+        </div>
+        <div class="metric-card">
+          <div class="m-label">Daily operating cost</div>
+          <div class="m-val">EC$25–35K</div>
+          <div class="m-sub">Salaries, energy, maintenance, admin</div>
+        </div>
+        <div class="metric-card" style="background: var(--blue-light);">
+          <div class="m-label" style="color: var(--blue);">Est. annual surplus</div>
+          <div class="m-val" style="color: var(--blue);">EC$1.8–5.5M</div>
+          <div class="m-sub" style="color: var(--blue);">Before depreciation & financing costs</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 11. RISKS -->
+  <div class="section" id="risks">
+    <div class="section-header">
+      <div class="section-num">11</div>
+      <div class="section-title">Risk register (top 12)</div>
+    </div>
+    <div class="card">
+      <div class="risk-row header">
+        <span>Risk</span><span>Likelihood</span><span>Impact</span><span>Severity</span>
+      </div>
+      <div class="risk-row">
+        <span><strong>Charging infrastructure not ready at bus arrival</strong><br><span style="font-size: 12px; color: var(--text-secondary);">Begin GRENLEC engagement now. Procure chargers 90 days before bus arrival. Install temporary generator backup.</span></span>
+        <span><span class="badge badge-red">High</span></span>
+        <span><span class="badge badge-red">High</span></span>
+        <span><span class="badge badge-red">Critical</span></span>
+      </div>
+      <div class="risk-row">
+        <span><strong>Grid capacity insufficient at depot site</strong><br><span style="font-size: 12px; color: var(--text-secondary);">Commission GRENLEC load study immediately. Consider solar+battery storage hybrid. Identify secondary depot if needed.</span></span>
+        <span><span class="badge badge-red">High</span></span>
+        <span><span class="badge badge-red">High</span></span>
+        <span><span class="badge badge-red">Critical</span></span>
+      </div>
+      <div class="risk-row">
+        <span><strong>NBA operator resistance or conflict</strong><br><span style="font-size: 12px; color: var(--text-secondary);">Early consultation with NBA. Designate new routes first; do not displace NBA on Day 1. Offer structured transition plan.</span></span>
+        <span><span class="badge badge-red">High</span></span>
+        <span><span class="badge badge-red">High</span></span>
+        <span><span class="badge badge-red">Critical</span></span>
+      </div>
+      <div class="risk-row">
+        <span><strong>Financial sustainability without subsidy</strong><br><span style="font-size: 12px; color: var(--text-secondary);">Model fare revenue projections before launch. Engage MoF for operational subsidy. Explore CDB financing.</span></span>
+        <span><span class="badge badge-red">High</span></span>
+        <span><span class="badge badge-red">High</span></span>
+        <span><span class="badge badge-red">Critical</span></span>
+      </div>
+      <div class="risk-row">
+        <span><strong>Spare parts unavailability from Chinese OEM</strong><br><span style="font-size: 12px; color: var(--text-secondary);">Negotiate minimum 2-year spare parts buffer in procurement contract. Identify Caribbean distribution partner.</span></span>
+        <span><span class="badge badge-red">High</span></span>
+        <span><span class="badge badge-red">High</span></span>
+        <span><span class="badge badge-red">Critical</span></span>
+      </div>
+      <div class="risk-row">
+        <span><strong>Driver shortage or inadequate training</strong><br><span style="font-size: 12px; color: var(--text-secondary);">Begin CDL recruitment 90 days pre-arrival. Contract Chinese OEM trainers for simulator/live sessions.</span></span>
+        <span><span class="badge badge-amber">Medium</span></span>
+        <span><span class="badge badge-red">High</span></span>
+        <span><span class="badge badge-red">High</span></span>
+      </div>
+      <div class="risk-row">
+        <span><strong>Customs clearance delays (buses and chargers)</strong><br><span style="font-size: 12px; color: var(--text-secondary);">Engage Customs in advance. Prepare all documentation. Leverage diplomatic channel for duty waiver.</span></span>
+        <span><span class="badge badge-amber">Medium</span></span>
+        <span><span class="badge badge-red">High</span></span>
+        <span><span class="badge badge-red">High</span></span>
+      </div>
+      <div class="risk-row">
+        <span><strong>Road Traffic Act not amended for EVs before launch</strong><br><span style="font-size: 12px; color: var(--text-secondary);">Engage AG's Chambers immediately. Interim Cabinet order or ministerial exemption if amendment delayed.</span></span>
+        <span><span class="badge badge-amber">Medium</span></span>
+        <span><span class="badge badge-red">High</span></span>
+        <span><span class="badge badge-red">High</span></span>
+      </div>
+      <div class="risk-row">
+        <span><strong>Payment system not ready at launch</strong><br><span style="font-size: 12px; color: var(--text-secondary);">Phase launch with dual cash+tap-to-pay. Full cashless migration in Month 4. Use existing NFC vendors.</span></span>
+        <span><span class="badge badge-amber">Medium</span></span>
+        <span><span class="badge badge-amber">Medium</span></span>
+        <span><span class="badge badge-amber">Medium</span></span>
+      </div>
+      <div class="risk-row">
+        <span><strong>Battery degradation in tropical climate</strong><br><span style="font-size: 12px; color: var(--text-secondary);">Specify buses with tropical-spec BMS. Require OEM warranty for climate performance.</span></span>
+        <span><span class="badge badge-amber">Medium</span></span>
+        <span><span class="badge badge-amber">Medium</span></span>
+        <span><span class="badge badge-amber">Medium</span></span>
+      </div>
+      <div class="risk-row">
+        <span><strong>Public unfamiliarity with new system</strong><br><span style="font-size: 12px; color: var(--text-secondary);">Launch public awareness campaign 60 days pre-launch. Free/discounted rides for first 2 weeks.</span></span>
+        <span><span class="badge badge-amber">Medium</span></span>
+        <span><span class="badge badge-amber">Medium</span></span>
+        <span><span class="badge badge-amber">Medium</span></span>
+      </div>
+      <div class="risk-row" style="border-bottom: none;">
+        <span><strong>Depot site security and vandalism</strong><br><span style="font-size: 12px; color: var(--text-secondary);">Secure depot with fencing, lighting, CCTV, and on-site security guard from Day 1 of bus arrival.</span></span>
+        <span><span class="badge badge-green">Low</span></span>
+        <span><span class="badge badge-red">High</span></span>
+        <span><span class="badge badge-amber">Moderate</span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 12. KPIs -->
+  <div class="section" id="kpis">
+    <div class="section-header">
+      <div class="section-num">12</div>
+      <div class="section-title">Key performance indicators</div>
+    </div>
+    <div class="card">
+      <div class="kpi-row header">
+        <span>KPI</span><span>Target</span><span>Action trigger</span>
+      </div>
+      <div class="kpi-row">
+        <span><strong>Fleet Availability Rate</strong><br><span style="font-size: 12px; color: var(--text-secondary);">% of scheduled buses operating on any given day. Daily (TMS).</span></span>
+        <span><span class="badge badge-green">≥ 90%</span></span>
+        <span>Below 85% triggers mandatory maintenance review and fleet reserve deployment</span>
+      </div>
+      <div class="kpi-row">
+        <span><strong>Schedule Adherence / Punctuality</strong><br><span style="font-size: 12px; color: var(--text-secondary);">% of trips departing/arriving within 5 min of timetable. Daily (TMS).</span></span>
+        <span><span class="badge badge-green">≥ 85%</span></span>
+        <span>Tracked per route and driver. Used in driver performance reviews.</span>
+      </div>
+      <div class="kpi-row">
+        <span><strong>Ridership (passengers per day)</strong><br><span style="font-size: 12px; color: var(--text-secondary);">Total daily passengers across all EB routes. Daily (payment system).</span></span>
+        <span><span class="badge badge-blue">+10% MoM (first 6 months)</span></span>
+        <span>Reported to GTC Board monthly. Benchmark against pre-EB paratransit volumes.</span>
+      </div>
+      <div class="kpi-row">
+        <span><strong>Revenue per Bus per Day</strong><br><span style="font-size: 12px; color: var(--text-secondary);">Gross fare revenue ÷ operating buses. Daily (Finance).</span></span>
+        <span><span class="badge badge-green">≥ EC$800 / bus / day</span></span>
+        <span>Below EC$600 triggers route review. Used to assess financial sustainability.</span>
+      </div>
+      <div class="kpi-row">
+        <span><strong>Energy Consumption (kWh/km)</strong><br><span style="font-size: 12px; color: var(--text-secondary);">Average energy use per km per bus. Weekly (CMS).</span></span>
+        <span><span class="badge badge-green">≤ 1.5 kWh/km</span></span>
+        <span>Above 2.0 kWh/km flags maintenance or driver behaviour issue.</span>
+      </div>
+      <div class="kpi-row">
+        <span><strong>Unplanned Charging Downtime</strong><br><span style="font-size: 12px; color: var(--text-secondary);">Hours/week bus unavailable due to unplanned charging. Weekly (CMS). Planned overnight charging excluded.</span></span>
+        <span><span class="badge badge-green">≤ 2 hrs/week</span></span>
+        <span>Bus pulled from route to charge = unplanned downtime event. Logged and reviewed.</span>
+      </div>
+      <div class="kpi-row">
+        <span><strong>Customer Satisfaction Score</strong><br><span style="font-size: 12px; color: var(--text-secondary);">Passenger survey rating comfort, reliability, cleanliness. Quarterly (app + paper).</span></span>
+        <span><span class="badge badge-blue">≥ 4.0 / 5.0</span></span>
+        <span>Survey via app and paper. KPI drives service improvement budget.</span>
+      </div>
+      <div class="kpi-row">
+        <span><strong>Incident Rate (safety)</strong><br><span style="font-size: 12px; color: var(--text-secondary);">Accidents / incidents per 10,000 km operated. Monthly.</span></span>
+        <span><span class="badge badge-green">≤ 0.5 per 10,000 km</span></span>
+        <span>All incidents reported to RGPF and GTC. Zero tolerance for preventable safety incidents.</span>
+      </div>
+      <div class="kpi-row">
+        <span><strong>Cashless Payment Adoption Rate</strong><br><span style="font-size: 12px; color: var(--text-secondary);">% of trips paid via cashless method. Monthly (payment system).</span></span>
+        <span><span class="badge badge-amber">50% by Mo 6; 90% by Mo 12</span></span>
+        <span>Critical for revenue transparency and data collection.</span>
+      </div>
+      <div class="kpi-row" style="border-bottom: none;">
+        <span><strong>Carbon Reduction Estimate</strong><br><span style="font-size: 12px; color: var(--text-secondary);">Estimated CO2 avoided vs equivalent diesel fleet (tonnes/year). Annual.</span></span>
+        <span><span class="badge badge-green">Tracked annually</span></span>
+        <span>Reported to GoG and UNEP/GEF e-mobility project. High PR/marketing value.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 13. BUDGET -->
+  <div class="section" id="budget">
+    <div class="section-header">
+      <div class="section-num">13</div>
+      <div class="section-title">Budget summary (Phase 1 implementation)</div>
+    </div>
+    <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 20px;">All figures in Eastern Caribbean Dollars (EC$). Excludes the cost of buses (financed under GoG–China MOU). Includes 15% contingency.</p>
+
+    <div class="card" style="margin-bottom: 16px;">
+      <div class="budget-row header">
+        <span>Category</span><span>Low (EC$)</span><span>High (EC$)</span><span>Priority</span>
+      </div>
+      <div class="budget-row">
+        <span>Depot site preparation (fencing, lighting, CCTV, hardstand)</span>
+        <span>250,000</span>
+        <span>450,000</span>
+        <span><span class="badge badge-red">Critical</span></span>
+      </div>
+      <div class="budget-row">
+        <span>EV charging infrastructure (15 AC + 6 DC chargers, cabling, switchgear)</span>
+        <span>600,000</span>
+        <span>1,200,000</span>
+        <span><span class="badge badge-red">Critical</span></span>
+      </div>
+      <div class="budget-row">
+        <span>Terminal charging stations (Grand Anse, Grenville, Sauteurs — 2 DC each)</span>
+        <span>400,000</span>
+        <span>750,000</span>
+        <span><span class="badge badge-red">Critical</span></span>
+      </div>
+      <div class="budget-row">
+        <span>Driver recruitment & training (70–90 drivers; CDL + EV training)</span>
+        <span>150,000</span>
+        <span>300,000</span>
+        <span><span class="badge badge-red">Critical</span></span>
+      </div>
+      <div class="budget-row">
+        <span>Insurance (fleet hull + passenger liability, Year 1)</span>
+        <span>180,000</span>
+        <span>350,000</span>
+        <span><span class="badge badge-red">Critical</span></span>
+      </div>
+      <div class="budget-row">
+        <span>Legal / AG's Chambers (EV regulation, concession agreements)</span>
+        <span>50,000</span>
+        <span>100,000</span>
+        <span><span class="badge badge-red">Critical</span></span>
+      </div>
+      <div class="budget-row">
+        <span>Payment system (validators, backend, app, 3-year contract)</span>
+        <span>300,000</span>
+        <span>600,000</span>
+        <span><span class="badge badge-amber">High</span></span>
+      </div>
+      <div class="budget-row">
+        <span>Transport Management System (TMS/GPS/dispatch software)</span>
+        <span>200,000</span>
+        <span>400,000</span>
+        <span><span class="badge badge-amber">High</span></span>
+      </div>
+      <div class="budget-row">
+        <span>EV mechanic training & tools (OEM-certified)</span>
+        <span>80,000</span>
+        <span>150,000</span>
+        <span><span class="badge badge-amber">High</span></span>
+      </div>
+      <div class="budget-row">
+        <span>Spare parts buffer (2-year supply from OEM)</span>
+        <span>400,000</span>
+        <span>700,000</span>
+        <span><span class="badge badge-amber">High</span></span>
+      </div>
+      <div class="budget-row">
+        <span>Public communications & branding campaign</span>
+        <span>80,000</span>
+        <span>180,000</span>
+        <span><span class="badge badge-blue">Medium</span></span>
+      </div>
+      <div class="budget-row">
+        <span>Contingency (15%)</span>
+        <span>417,000</span>
+        <span>773,000</span>
+        <span><span class="badge badge-gold">Required</span></span>
+      </div>
+      <div class="budget-row total-row">
+        <span>Total implementation cost (excl. buses)</span>
+        <span>3,107,000</span>
+        <span>5,953,000</span>
+        <span></span>
+      </div>
+    </div>
+
+    <div class="card-grid card-grid-2">
+      <div class="metric-card" style="background: var(--red-light);">
+        <div class="m-label" style="color: var(--red);">Annual operating cost</div>
+        <div class="m-val" style="color: var(--red);">EC$4.5M – 7.5M</div>
+        <div class="m-sub" style="color: var(--red);">Salaries, energy, maintenance, insurance, administration</div>
+      </div>
+      <div class="metric-card" style="background: var(--green-light);">
+        <div class="m-label" style="color: var(--green);">Break-even target</div>
+        <div class="m-val" style="color: var(--green);">24 months</div>
+        <div class="m-sub" style="color: var(--green);">Operational self-sufficiency goal from launch</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 14. GOVERNANCE -->
+  <div class="section" id="governance">
+    <div class="section-header">
+      <div class="section-num">14</div>
+      <div class="section-title">Governance & programme management</div>
+    </div>
+
+    <div class="card-grid card-grid-2" style="margin-bottom: 20px;">
+      <div class="card">
+        <p style="font-size: 13px; font-weight: 600; margin-bottom: 14px;">EBITF membership (Electric Bus Implementation Task Force)</p>
+        <div style="font-size: 13px; display: flex; flex-direction: column; gap: 6px;">
+          <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 0.5px solid var(--border);">
+            <span style="font-weight: 600;">Chair</span><span style="color: var(--text-secondary);">GTC CEO</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 0.5px solid var(--border);">
+            <span style="font-weight: 600;">Programme Manager</span><span style="color: var(--text-secondary);">EB Programme Manager</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 0.5px solid var(--border);">
+            <span>Operations</span><span style="color: var(--text-secondary);">Fleet Operations Manager</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 0.5px solid var(--border);">
+            <span>Technical</span><span style="color: var(--text-secondary);">EV Technical Manager</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 0.5px solid var(--border);">
+            <span>Finance</span><span style="color: var(--text-secondary);">Finance Officer</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 0.5px solid var(--border);">
+            <span>Legal (observer)</span><span style="color: var(--text-secondary);">AG's Chambers rep</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 0.5px solid var(--border);">
+            <span>IT</span><span style="color: var(--text-secondary);">GTC IT/Digital Lead</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 0.5px solid var(--border);">
+            <span>External: GRENLEC liaison</span><span style="color: var(--text-secondary);">GRENLEC</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 0.5px solid var(--border);">
+            <span>External: Chinese OEM</span><span style="color: var(--text-secondary);">OEM Representative</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding: 6px 0;">
+            <span>External: UNEP/GEF</span><span style="color: var(--text-secondary);">Ms. Nichole Gellineau (PSC)</span>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <p style="font-size: 13px; font-weight: 600; margin-bottom: 14px;">Reporting cadence</p>
+        <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px;">
+          <div style="padding: 10px; background: var(--gray-light); border-radius: var(--radius-sm);">
+            <p style="font-weight: 600; margin-bottom: 3px;">Daily</p>
+            <p style="color: var(--text-secondary);">Ops Manager → CEO: fleet availability, incidents, ridership, charging status</p>
+          </div>
+          <div style="padding: 10px; background: var(--gray-light); border-radius: var(--radius-sm);">
+            <p style="font-weight: 600; margin-bottom: 3px;">Weekly</p>
+            <p style="color: var(--text-secondary);">EBITF meeting: programme progress against schedule, risk escalation</p>
+          </div>
+          <div style="padding: 10px; background: var(--gray-light); border-radius: var(--radius-sm);">
+            <p style="font-weight: 600; margin-bottom: 3px;">Monthly</p>
+            <p style="color: var(--text-secondary);">CEO → Board: KPI dashboard, financial report, risk register update</p>
+          </div>
+          <div style="padding: 10px; background: var(--gray-light); border-radius: var(--radius-sm);">
+            <p style="font-weight: 600; margin-bottom: 3px;">Quarterly</p>
+            <p style="color: var(--text-secondary);">GTC → MoI: programme progress, KPIs, Phase 2 planning update</p>
+          </div>
+          <div style="padding: 10px; background: var(--gray-light); border-radius: var(--radius-sm);">
+            <p style="font-weight: 600; margin-bottom: 3px;">Annually</p>
+            <p style="color: var(--text-secondary);">GTC → Cabinet: full programme review, Phase 2 fleet procurement business case</p>
+          </div>
+        </div>
+        <div style="margin-top: 14px; font-size: 13px; padding: 10px; background: var(--amber-light); border-radius: var(--radius-sm);">
+          <p style="font-weight: 600; margin-bottom: 3px; color: var(--amber);">Decision rights</p>
+          <p>Board approval required for: capex above EC$500K, fare changes, route allocation changes, concession or employment agreements. Cabinet/MoF approval for GoG financial commitments, legal instruments, and duty waivers.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <p style="font-size: 13px; font-weight: 600; margin-bottom: 16px;">RACI summary</p>
+      <div class="raci-row header">
+        <span>Activity</span><span>Responsible (R)</span><span>Accountable (A)</span><span>Consulted (C)</span>
+      </div>
+      <div class="raci-row">
+        <span>Pre-arrival preparedness (depot, charging, legal)</span>
+        <span>GTC CEO / Board</span>
+        <span>MoI, GRENLEC, AG</span>
+        <span>NBA, Chinese Partners</span>
+      </div>
+      <div class="raci-row">
+        <span>Fleet customs clearance & registration</span>
+        <span>GTC Ops Manager</span>
+        <span>Customs, RGPF</span>
+        <span>Chinese Partners</span>
+      </div>
+      <div class="raci-row">
+        <span>Route design & Phase 1 scheduling</span>
+        <span>GTC Transport Planner</span>
+        <span>GTC CEO, MoI</span>
+        <span>NBA Representatives</span>
+      </div>
+      <div class="raci-row">
+        <span>Driver recruitment & training</span>
+        <span>GTC HR Manager</span>
+        <span>GTC CEO, Board</span>
+        <span>Chinese OEM Trainers</span>
+      </div>
+      <div class="raci-row">
+        <span>Charging infrastructure installation</span>
+        <span>GTC Technical Manager</span>
+        <span>GRENLEC, GTC CEO</span>
+        <span>EV Charging Supplier</span>
+      </div>
+      <div class="raci-row">
+        <span>Payment system deployment</span>
+        <span>GTC IT/Digital Lead</span>
+        <span>GTC CEO, MoF</span>
+        <span>Fintech Vendor</span>
+      </div>
+      <div class="raci-row">
+        <span>Legal instruments (concession, Road Traffic EV)</span>
+        <span>AG's Chambers</span>
+        <span>GTC CEO, Cabinet</span>
+        <span>NBA, Legal Counsel</span>
+      </div>
+      <div class="raci-row" style="border-bottom: none;">
+        <span>Monitoring, evaluation & KPIs</span>
+        <span>GTC CEO / Board</span>
+        <span>MoI, GIZ</span>
+        <span>All departments</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 15. PHASE 2 -->
+  <div class="section" id="phase2">
+    <div class="section-header">
+      <div class="section-num">15</div>
+      <div class="section-title">Phase 2 & beyond — the growth roadmap</div>
+    </div>
+
+    <div class="card-grid card-grid-2">
+      <div class="card">
+        <p style="font-size: 13px; font-weight: 600; margin-bottom: 14px;">Phase 2 trigger conditions (all four must be met)</p>
+        <div class="phase2-trigger">
+          <span class="checkmark">✓</span>
+          <span>Phase 1 fleet achieves &gt;85% operational availability for 3 consecutive months</span>
+        </div>
+        <div class="phase2-trigger">
+          <span class="checkmark">✓</span>
+          <span>Ridership on Phase 1 routes exceeds 70% of capacity during peak hours</span>
+        </div>
+        <div class="phase2-trigger">
+          <span class="checkmark">✓</span>
+          <span>Financial model shows Phase 1 operations are cash-flow positive or within acceptable subsidy envelope</span>
+        </div>
+        <div class="phase2-trigger" style="border-bottom: none;">
+          <span class="checkmark">✓</span>
+          <span>Charging infrastructure is proven adequate and expandable</span>
+        </div>
+      </div>
+      <div class="card">
+        <p style="font-size: 13px; font-weight: 600; margin-bottom: 14px;">Phase 2 fleet & route expansion</p>
+        <div style="font-size: 13px; display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 0.5px solid var(--border);">
+            <span>Additional buses (Phase 2)</span><span style="font-weight: 600;">40–60 buses</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 0.5px solid var(--border);">
+            <span>New Zone 2 — Eastern Main Road</span><span style="font-weight: 600;">5 buses</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 0.5px solid var(--border);">
+            <span>New Express Grenville–Grand Anse</span><span style="font-weight: 600;">5 buses</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 0.5px solid var(--border);">
+            <span>Zone 9 inter-parish routes</span><span style="font-weight: 600;">Remaining fleet</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 0.5px solid var(--border);">
+            <span>St. George's urban circular</span><span style="font-weight: 600;">TBD</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 0.5px solid var(--border);">
+            <span>Full network build-out fleet</span><span style="font-weight: 600;">80–100 EB total</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding: 6px 0;">
+            <span>Phase 2 procurement partners</span><span style="font-weight: 600; color: var(--text-secondary);">CDB, SWJTU, UNEP/GEF</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 16. FIRST 30 DAYS -->
+  <div class="section" id="actions">
+    <div class="section-header">
+      <div class="section-num">16</div>
+      <div class="section-title">Immediate action list — first 30 days</div>
+    </div>
+    <div class="card-grid card-grid-2">
+      <div>
+        <div class="action-week">
+          <h4>Week 1</h4>
+          <div class="action-item"><div class="action-dot"></div><span>GTC Board approves implementation plan and authorises CEO to proceed</span></div>
+          <div class="action-item"><div class="action-dot"></div><span>CEO designates or hires Electric Bus Programme Manager</span></div>
+          <div class="action-item"><div class="action-dot"></div><span>CEO writes to GRENLEC CEO: expedited load study and grid capacity reservation for depot</span></div>
+          <div class="action-item"><div class="action-dot"></div><span>CEO writes to AG's Chambers: interim EV registration order + formal Road Traffic Act amendment</span></div>
+          <div class="action-item"><div class="action-dot"></div><span>Confirm bus OEM charging connector standard (GB/T vs CCS2) with Chinese partners</span></div>
+          <div class="action-item"><div class="action-dot"></div><span>CEO calls NBA President: request joint meeting within 2 weeks to brief on transition plan</span></div>
+        </div>
+        <div class="action-week">
+          <h4>Week 2</h4>
+          <div class="action-item"><div class="action-dot"></div><span>Identify and commit to depot site (must have planning permission or government land allocated)</span></div>
+          <div class="action-item"><div class="action-dot"></div><span>Issue RFP for EV charging equipment (connector standard confirmed)</span></div>
+          <div class="action-item"><div class="action-dot"></div><span>Issue RFP for payment system vendor</span></div>
+          <div class="action-item"><div class="action-dot"></div><span>Begin driver recruitment advertising nationally</span></div>
+          <div class="action-item"><div class="action-dot"></div><span>GTC Finance Officer prepares financial model for Board review</span></div>
+        </div>
+      </div>
+      <div>
+        <div class="action-week">
+          <h4>Week 3</h4>
+          <div class="action-item"><div class="action-dot"></div><span>NBA coexistence meeting: present transition plan, obtain NBA agreement in principle</span></div>
+          <div class="action-item"><div class="action-dot"></div><span>Engage Customs Authority on duty waiver documentation for bus fleet</span></div>
+          <div class="action-item"><div class="action-dot"></div><span>Engage UNEP/GEF project officer (Ms. Nichole Gellineau) to align charging site with GEF grant scope</span></div>
+          <div class="action-item"><div class="action-dot"></div><span>Begin procurement process for depot contractor (fencing, hardstand, electrical prep)</span></div>
+        </div>
+        <div class="action-week">
+          <h4>Week 4</h4>
+          <div class="action-item"><div class="action-dot"></div><span>EBITF constituted and first formal meeting held</span></div>
+          <div class="action-item"><div class="action-dot"></div><span>Master programme schedule adopted and circulated</span></div>
+          <div class="action-item"><div class="action-dot"></div><span>Budget approved by Board and submitted to MoF for capital allocation</span></div>
+          <div class="action-item"><div class="action-dot"></div><span>Public communications brief drafted for GTC Board approval</span></div>
+        </div>
+        <div class="callout callout-success" style="margin-top: 4px;">
+          <h4>Living document</h4>
+          <p>This plan must be reviewed and updated monthly by the EBITF. Any material change to bus arrival date, fleet size, or available financing must trigger an immediate schedule and budget revision.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div style="background: #0D2B1A; color: rgba(255,255,255,0.5); font-size: 12px; padding: 24px 48px; text-align: center;">
+  Grenada Transport Commission · Electric Bus Implementation Plan · Version 2.0 · April 2026 · Confidential — Strategic Document
+</div>
+
+</body>
+</html>
