@@ -1,4 +1,4 @@
-v major revisions based on new management model. Updates to documentation pending due to resource constraints. 
+major revisions based on new management model still needed. Updates to documentation pending due to resource constraints. 
 Model makes assumptions based on bus type, size, size of the battery, and general turnover.
 Model is Not an approved government strategy, will require rebuilds, modifications
 50% depth, need more inputs in order to improve resolution
