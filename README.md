@@ -8,4 +8,4 @@ A separate company (TGL) holds the operating licence and employs all staff
 Mixed public-private ownership with a dominant public stake (70/30)
 PSO subsidies paid against measurable KPIs
 Given Grenada's scale and Caribbean context, the more practical direct influence is Barbados Transport Board → BTMI hybrid evolution, and especially the Jamaica Urban Transit Company (JUTC) — a government-owned bus company that operates independently of the regulator, with private sector disciplines applied to a publicly-owned fleet.
-Updated with V6 model - assumptions (technical reduced) with embassy feedback regarding the program
+Updated with V6 model - assumptions (reduced) with embassy feedback regarding the program, MoT as addition to Matrix, removal of the term CEO from GTC line items in the matrix. 
